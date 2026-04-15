@@ -6,7 +6,7 @@
 /*   By: kali <kali@student.42.fr>                  +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2026/04/15 18:13:28 by kali              #+#    #+#             */
-/*   Updated: 2026/04/15 19:54:18 by kali             ###   ########.fr       */
+/*   Updated: 2026/04/15 23:43:18 by kali             ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -15,7 +15,8 @@
 void	start_threads(t_sim *sim)
 {
 	int	i;
-	
+
+	pthread_create(&sim->monitor, NULL, monitor_routine, sim);
 	i = 0;
 	while (i < sim->num_coders)
 	{
@@ -24,10 +25,12 @@ void	start_threads(t_sim *sim)
 		i++;
 	}
 }
+
 void	join_threads(t_sim *sim)
 {
 	int	i;
-	
+
+	pthread_join(sim->monitor, NULL);
 	i = 0;
 	while (i < sim->num_coders)
 	{
@@ -36,31 +39,20 @@ void	join_threads(t_sim *sim)
 	}
 }
 
-int	init_all(t_sim *sim, char **argv)
-{
-	if (!init_sim(sim, argv))
-		return (0);
-	if (!init_dongles(sim))
-		return (0);
-	if (!init_coders(sim))
-		return (0);
-	link_dongles(sim);
-	return (1);
-}
-
-
 int	main(int argc, char **argv)
 {
 	t_sim	*sim;
 
 	if (argc != 9)
-		return (1);
+		return (fprintf(stderr, "Usage: ./codexion <n> <burnout> <compile>"
+				" <debug> <refactor> <must_compile> <cooldown> <fifo|edf>\n"),
+			1);
 	sim = malloc(sizeof(t_sim));
 	if (!sim)
 		return (1);
 	memset(sim, 0, sizeof(t_sim));
-	if (!init_all(sim, argv))
-		return (1);
+	if (!init_sim(sim, argv))
+		return (free(sim), 1);
 	start_threads(sim);
 	join_threads(sim);
 	free_all(sim);

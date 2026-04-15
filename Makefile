@@ -1,3 +1,15 @@
+# **************************************************************************** #
+#                                                                              #
+#                                                         :::      ::::::::    #
+#    Makefile                                           :+:      :+:    :+:    #
+#                                                     +:+ +:+         +:+      #
+#    By: kali <kali@student.42.fr>                  +#+  +:+       +#+         #
+#                                                 +#+#+#+#+#+   +#+            #
+#    Created: 2026/04/15 23:44:59 by kali              #+#    #+#              #
+#    Updated: 2026/04/15 23:45:00 by kali             ###   ########.fr        #
+#                                                                              #
+# **************************************************************************** #
+
 NAME = codexion
 
 CC = cc
@@ -5,10 +17,12 @@ CFLAGS = -Wall -Wextra -Werror -pthread
 
 SRCS = main.c \
 	   init.c \
-	   time.c \
-	   logger.c \
 	   parse.c \
-	   coder_routine.c 
+	   utils.c \
+	   log.c \
+	   sync.c \
+	   monitor.c \
+	   coder_routine.c
 
 OBJS = $(SRCS:.c=.o)
 

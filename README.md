@@ -62,6 +62,15 @@ So instead of passing 10 variables, we pass:
 t_coder *
 and from there
 coder->sim to get full access to everything
+## What a coder should do
+Take left dongle
+Take right dongle
+compile
+release both dongles
+debug
+refactor
+repeat
+pthread_cond_wait() puts thread to sleep until something changes better than infinite loop
 
 # Instructions
 
