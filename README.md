@@ -37,6 +37,32 @@ This happens because of context switch between steps
 # Description
 Expected input format:
 ./codexion number_of_coders time_to_burnout time_to_compile time_to_debug time_to_refactor number_of_compiles_required dongle_cooldown scheduler
+
+First we parse only integers, then we create dongles array and initialize each mutex and create the coders array and assign left/right dongles (circularly)
+
+Every coder needs left dongle and right dongle
+A dongle is a shared resource meaning a lock prevents 2 coders using it at the same time
+Every coder has an id
+last_compile_time to detect burnout later
+compile_count to count how mant cycles done
+each coder points to shared dongles but dont own any
+We create N dongles
+if 5 coders then we create 5 dongles
+initially each dongle gets a lock
+(i + 1) % n wraps the last coder back to the first dongle
+so coder 0 gets dongle 0 and dongle 1
+coder 1 gets dongle 1 and dongle 2
+coder 2 gets dongle 2 and dongle 3
+coder 3 gets dongle 3 and dongle 0
+(3 + 1) % 4 -> 4 % 4 = 0
+The reason we store a sim inside coder struct is because we inside a coder thread we will need access to time_to_burnout, stop flag, and log mutex, and scheduler type and all coders/songles
+but inside a thread function we only get:
+void *arg
+So instead of passing 10 variables, we pass:
+t_coder *
+and from there
+coder->sim to get full access to everything
+
 # Instructions
 
 # Resources
