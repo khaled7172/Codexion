@@ -71,7 +71,7 @@ debug
 refactor
 repeat
 pthread_cond_wait() puts thread to sleep until something changes better than infinite loop
-
+#add edge case for 1 coder
 # Instructions
 
 # Resources
