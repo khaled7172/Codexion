@@ -6,7 +6,7 @@
 /*   By: kali <kali@student.42.fr>                  +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2026/04/15 18:13:31 by kali              #+#    #+#             */
-/*   Updated: 2026/04/16 12:08:27 by kali             ###   ########.fr       */
+/*   Updated: 2026/04/16 17:09:10 by kali             ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -34,4 +34,17 @@ int	is_number(char *s)
 		i++;
 	}
 	return (1);
+}
+
+void	ft_usleep(long ms, t_sim *sim)
+{
+	long	end;
+
+	end = get_time_ms() + ms;
+	while (get_time_ms() < end)
+	{
+		if (sim_stopped(sim))
+			return ;
+		usleep(500);
+	}
 }

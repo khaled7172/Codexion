@@ -6,7 +6,7 @@
 /*   By: kali <kali@student.42.fr>                  +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2026/04/15 18:13:10 by kali              #+#    #+#             */
-/*   Updated: 2026/04/16 12:16:20 by kali             ###   ########.fr       */
+/*   Updated: 2026/04/16 17:10:08 by kali             ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -19,20 +19,20 @@ static void	do_compile(t_coder *coder)
 	sim = coder->sim;
 	coder->last_compile_time = get_time_ms();
 	log_state(sim, coder->id, "is compiling");
-	usleep(sim->time_to_compile * 1000);
+	ft_usleep(sim->time_to_compile, sim);
 	coder->compile_count++;
 }
 
 static void	do_debug(t_coder *coder)
 {
 	log_state(coder->sim, coder->id, "is debugging");
-	usleep(coder->sim->time_to_debug * 1000);
+	ft_usleep(coder->sim->time_to_debug, coder->sim);
 }
 
 static void	do_refactor(t_coder *coder)
 {
 	log_state(coder->sim, coder->id, "is refactoring");
-	usleep(coder->sim->time_to_refactor * 1000);
+	ft_usleep(coder->sim->time_to_refactor, coder->sim);
 }
 
 void	*coder_routine(void *arg)
@@ -40,6 +40,7 @@ void	*coder_routine(void *arg)
 	t_coder	*coder;
 
 	coder = (t_coder *)arg;
+	ft_usleep((long)(coder->id - 1), coder->sim);
 	while (!sim_stopped(coder->sim))
 	{
 		if (!acquire_both_dongles(coder))

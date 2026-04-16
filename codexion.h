@@ -6,7 +6,7 @@
 /*   By: kali <kali@student.42.fr>                  +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2026/04/15 18:13:17 by kali              #+#    #+#             */
-/*   Updated: 2026/04/16 12:15:30 by kali             ###   ########.fr       */
+/*   Updated: 2026/04/16 17:10:37 by kali             ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -47,6 +47,7 @@ typedef struct s_dongle
 	int				id;
 	int				in_use;
 	long			ready_at;
+	long			ticket;
 	t_heap			queue;
 }	t_dongle;
 
@@ -101,6 +102,8 @@ int			heap_init(t_heap *h, int cap);
 void		heap_free(t_heap *h);
 void		heap_push(t_heap *h, t_waiter w);
 t_waiter	heap_pop(t_heap *h);
+
+void		ft_usleep(long ms, t_sim *sim);
 
 /* sync.c */
 int			acquire_both_dongles(t_coder *coder);
