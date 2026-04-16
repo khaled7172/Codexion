@@ -6,7 +6,7 @@
 /*   By: kali <kali@student.42.fr>                  +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2026/04/15 18:12:56 by kali              #+#    #+#             */
-/*   Updated: 2026/04/15 23:43:30 by kali             ###   ########.fr       */
+/*   Updated: 2026/04/16 12:07:20 by kali             ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -25,6 +25,8 @@ static int	init_dongles(t_sim *sim)
 		sim->dongles[i].id = i;
 		sim->dongles[i].in_use = 0;
 		sim->dongles[i].ready_at = 0;
+		if (!heap_init(&sim->dongles[i].queue, sim->num_coders))
+			return (0);
 		i++;
 	}
 	return (1);
@@ -46,6 +48,8 @@ static int	init_coders(t_sim *sim)
 		sim->coders[i].left = &sim->dongles[i];
 		sim->coders[i].right = &sim->dongles[(i + 1) % sim->num_coders];
 		sim->coders[i].sim = sim;
+		if (pthread_cond_init(&sim->coders[i].cond, NULL) != 0)
+			return (0);
 		i++;
 	}
 	return (1);
@@ -58,8 +62,6 @@ static int	init_mutexes(t_sim *sim)
 	if (pthread_mutex_init(&sim->log_lock, NULL) != 0)
 		return (0);
 	if (pthread_mutex_init(&sim->state_lock, NULL) != 0)
-		return (0);
-	if (pthread_cond_init(&sim->state_cond, NULL) != 0)
 		return (0);
 	return (1);
 }
@@ -81,13 +83,30 @@ int	init_sim(t_sim *sim, char **av)
 
 void	free_all(t_sim *sim)
 {
-	if (sim->dongles)
-		free(sim->dongles);
+	int	i;
+
 	if (sim->coders)
+	{
+		i = 0;
+		while (i < sim->num_coders)
+		{
+			pthread_cond_destroy(&sim->coders[i].cond);
+			i++;
+		}
 		free(sim->coders);
+	}
+	if (sim->dongles)
+	{
+		i = 0;
+		while (i < sim->num_coders)
+		{
+			heap_free(&sim->dongles[i].queue);
+			i++;
+		}
+		free(sim->dongles);
+	}
 	pthread_mutex_destroy(&sim->stop_lock);
 	pthread_mutex_destroy(&sim->log_lock);
 	pthread_mutex_destroy(&sim->state_lock);
-	pthread_cond_destroy(&sim->state_cond);
 	free(sim);
 }

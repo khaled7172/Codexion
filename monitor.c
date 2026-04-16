@@ -6,7 +6,7 @@
 /*   By: kali <kali@student.42.fr>                  +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2026/04/15 18:13:40 by kali              #+#    #+#             */
-/*   Updated: 2026/04/15 23:44:30 by kali             ###   ########.fr       */
+/*   Updated: 2026/04/16 12:14:39 by kali             ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -16,6 +16,8 @@ static int	all_done(t_sim *sim)
 {
 	int	i;
 
+	if (sim->must_compile == 0)
+		return (0);
 	i = 0;
 	while (i < sim->num_coders)
 	{
@@ -47,12 +49,26 @@ static int	check_burnout(t_sim *sim)
 	return (0);
 }
 
+static void	wake_all(t_sim *sim)
+{
+	int	i;
+
+	pthread_mutex_lock(&sim->state_lock);
+	i = 0;
+	while (i < sim->num_coders)
+	{
+		pthread_cond_signal(&sim->coders[i].cond);
+		i++;
+	}
+	pthread_mutex_unlock(&sim->state_lock);
+}
+
 static void	set_stop(t_sim *sim)
 {
 	pthread_mutex_lock(&sim->stop_lock);
 	sim->stop = 1;
 	pthread_mutex_unlock(&sim->stop_lock);
-	pthread_cond_broadcast(&sim->state_cond);
+	wake_all(sim);
 }
 
 void	*monitor_routine(void *arg)

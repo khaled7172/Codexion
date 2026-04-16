@@ -5,20 +5,8 @@
 /*                                                    +:+ +:+         +:+     */
 /*   By: kali <kali@student.42.fr>                  +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
-/*   Created: 2026/04/15 23:42:45 by kali              #+#    #+#             */
-/*   Updated: 2026/04/15 23:42:48 by kali             ###   ########.fr       */
-/*                                                                            */
-/* ************************************************************************** */
-
-/* ************************************************************************** */
-/*                                                                            */
-/*                                                        :::      ::::::::   */
-/*   codexion.h                                         :+:      :+:    :+:   */
-/*                                                    +:+ +:+         +:+     */
-/*   By: kali <kali@student.42.fr>                  +#+  +:+       +#+        */
-/*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2026/04/15 18:13:17 by kali              #+#    #+#             */
-/*   Updated: 2026/04/15 18:13:17 by kali             ###   ########.fr       */
+/*   Updated: 2026/04/16 12:15:30 by kali             ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -38,11 +26,28 @@ typedef enum e_scheduler
 	EDF
 }	t_scheduler;
 
+
+typedef struct s_waiter
+{
+	long			key;
+	int				coder_id;
+	pthread_cond_t	*cond;
+}	t_waiter;
+
+
+typedef struct s_heap
+{
+	t_waiter		*data;
+	int				size;
+	int				cap;
+}	t_heap;
+
 typedef struct s_dongle
 {
 	int				id;
 	int				in_use;
 	long			ready_at;
+	t_heap			queue;
 }	t_dongle;
 
 typedef struct s_coder
@@ -50,6 +55,7 @@ typedef struct s_coder
 	int				id;
 	long			last_compile_time;
 	int				compile_count;
+	pthread_cond_t	cond;
 	t_dongle		*left;
 	t_dongle		*right;
 	pthread_t		thread;
@@ -71,40 +77,44 @@ typedef struct s_sim
 	pthread_mutex_t	stop_lock;
 	pthread_mutex_t	log_lock;
 	pthread_mutex_t	state_lock;
-	pthread_cond_t	state_cond;
 	pthread_t		monitor;
 	t_coder			*coders;
 	t_dongle		*dongles;
 }	t_sim;
 
 /* utils.c */
-long	get_time_ms(void);
-int		is_number(char *s);
+long		get_time_ms(void);
+int			is_number(char *s);
 
 /* parse.c */
-int		parse_args(t_sim *sim, char **av);
+int			parse_args(t_sim *sim, char **av);
 
 /* init.c */
-int		init_sim(t_sim *sim, char **av);
-void	free_all(t_sim *sim);
+int			init_sim(t_sim *sim, char **av);
+void		free_all(t_sim *sim);
 
 /* log.c */
-void	log_state(t_sim *sim, int id, char *msg);
+void		log_state(t_sim *sim, int id, char *msg);
+
+/* scheduler.c */
+int			heap_init(t_heap *h, int cap);
+void		heap_free(t_heap *h);
+void		heap_push(t_heap *h, t_waiter w);
+t_waiter	heap_pop(t_heap *h);
 
 /* sync.c */
-int		can_compile(t_coder *coder);
-int		acquire_both_dongles(t_coder *coder);
-void	release_both_dongles(t_coder *coder);
-int		sim_stopped(t_sim *sim);
+int			acquire_both_dongles(t_coder *coder);
+void		release_both_dongles(t_coder *coder);
+int			sim_stopped(t_sim *sim);
 
 /* monitor.c */
-void	*monitor_routine(void *arg);
+void		*monitor_routine(void *arg);
 
 /* coder_routine.c */
-void	*coder_routine(void *arg);
+void		*coder_routine(void *arg);
 
 /* main.c */
-void	start_threads(t_sim *sim);
-void	join_threads(t_sim *sim);
+void		start_threads(t_sim *sim);
+void		join_threads(t_sim *sim);
 
 #endif

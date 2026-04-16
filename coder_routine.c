@@ -6,7 +6,7 @@
 /*   By: kali <kali@student.42.fr>                  +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2026/04/15 18:13:10 by kali              #+#    #+#             */
-/*   Updated: 2026/04/15 23:47:44 by kali             ###   ########.fr       */
+/*   Updated: 2026/04/16 12:16:20 by kali             ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -25,20 +25,14 @@ static void	do_compile(t_coder *coder)
 
 static void	do_debug(t_coder *coder)
 {
-	t_sim	*sim;
-
-	sim = coder->sim;
-	log_state(sim, coder->id, "is debugging");
-	usleep(sim->time_to_debug * 1000);
+	log_state(coder->sim, coder->id, "is debugging");
+	usleep(coder->sim->time_to_debug * 1000);
 }
 
 static void	do_refactor(t_coder *coder)
 {
-	t_sim	*sim;
-
-	sim = coder->sim;
-	log_state(sim, coder->id, "is refactoring");
-	usleep(sim->time_to_refactor * 1000);
+	log_state(coder->sim, coder->id, "is refactoring");
+	usleep(coder->sim->time_to_refactor * 1000);
 }
 
 void	*coder_routine(void *arg)
