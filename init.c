@@ -6,7 +6,7 @@
 /*   By: kali <kali@student.42.fr>                  +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2026/04/15 18:12:56 by kali              #+#    #+#             */
-/*   Updated: 2026/04/17 04:40:43 by kali             ###   ########.fr       */
+/*   Updated: 2026/04/18 02:14:44 by kali             ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -80,34 +80,4 @@ int	init_sim(t_sim *sim, char **av)
 	if (!init_coders(sim))
 		return (0);
 	return (1);
-}
-
-void	free_all(t_sim *sim)
-{
-	int	i;
-
-	if (sim->coders)
-	{
-		i = 0;
-		while (i < sim->num_coders)
-		{
-			pthread_cond_destroy(&sim->coders[i].cond);
-			i++;
-		}
-		free(sim->coders);
-	}
-	if (sim->dongles)
-	{
-		i = 0;
-		while (i < sim->num_coders)
-		{
-			heap_free(&sim->dongles[i].queue);
-			i++;
-		}
-		free(sim->dongles);
-	}
-	pthread_mutex_destroy(&sim->stop_lock);
-	pthread_mutex_destroy(&sim->log_lock);
-	pthread_mutex_destroy(&sim->state_lock);
-	free(sim);
 }

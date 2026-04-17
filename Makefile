@@ -1,10 +1,11 @@
 NAME = codexion
 
 CC = cc
-CFLAGS = -Wall -Wextra -Werror -pthread
+CFLAGS = -Wall -Wextra -Werror -pthread -std=c89
 
 SRCS = main.c \
 	   init.c \
+	   free.c \
 	   parse.c \
 	   utils.c \
 	   log.c \

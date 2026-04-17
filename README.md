@@ -563,7 +563,14 @@ main thread
    |--> coder 1 thread (loops: acquire → compile → debug → refactor)
    |--> coder 2 thread
    |--> coder 3 thread
+reason for adding this header:
+# define _XOPEN_SOURCE 600
 
+Why: usleep() is a POSIX extension, not part of the C standard.
+When you compile with -std=c99 or -std=c98, the compiler hides everything that is not pure ISO C unless you tell it otherwise. _XOPEN_SOURCE 600 unlocks POSIX.1-2001 extensions (which includes usleep, gettimeofday, pthread_*).
+Without it you get:
+error: implicit declaration of function 'usleep'
+Placing it in the header means every .c file that includes codexion.h automatically gets it.
 
 
 

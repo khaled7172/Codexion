@@ -6,12 +6,14 @@
 /*   By: kali <kali@student.42.fr>                  +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2026/04/15 18:13:17 by kali              #+#    #+#             */
-/*   Updated: 2026/04/17 04:38:26 by kali             ###   ########.fr       */
+/*   Updated: 2026/04/18 02:47:21 by kali             ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
 #ifndef CODEXION_H
 # define CODEXION_H
+
+# define _XOPEN_SOURCE 600
 
 # include <pthread.h>
 # include <sys/time.h>
@@ -26,14 +28,12 @@ typedef enum e_scheduler
 	EDF
 }	t_scheduler;
 
-
 typedef struct s_waiter
 {
 	long			key;
 	int				coder_id;
 	pthread_cond_t	*cond;
 }	t_waiter;
-
 
 typedef struct s_heap
 {
@@ -87,13 +87,19 @@ typedef struct s_sim
 /* utils.c */
 long		get_time_ms(void);
 int			is_number(char *s);
+void		ft_usleep(long ms, t_sim *sim);
+int			sim_stopped(t_sim *sim);
+long		sched_key(t_coder *coder, t_dongle *dongle);
 
 /* parse.c */
 int			parse_args(t_sim *sim, char **av);
 
 /* init.c */
 int			init_sim(t_sim *sim, char **av);
+
+/* free.c */
 void		free_all(t_sim *sim);
+void		release_both_dongles(t_coder *coder);
 
 /* log.c */
 void		log_state(t_sim *sim, int id, char *msg);
@@ -104,12 +110,8 @@ void		heap_free(t_heap *h);
 void		heap_push(t_heap *h, t_waiter w);
 t_waiter	heap_pop(t_heap *h);
 
-void		ft_usleep(long ms, t_sim *sim);
-
 /* sync.c */
 int			acquire_both_dongles(t_coder *coder);
-void		release_both_dongles(t_coder *coder);
-int			sim_stopped(t_sim *sim);
 
 /* monitor.c */
 void		*monitor_routine(void *arg);

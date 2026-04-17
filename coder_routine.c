@@ -6,7 +6,7 @@
 /*   By: kali <kali@student.42.fr>                  +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2026/04/15 18:13:10 by kali              #+#    #+#             */
-/*   Updated: 2026/04/17 04:41:17 by kali             ###   ########.fr       */
+/*   Updated: 2026/04/18 02:14:52 by kali             ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -22,7 +22,6 @@ static void	do_compile(t_coder *coder)
 	coder->last_compile_time = get_time_ms();
 	coder->compile_count++;
 }
-
 
 static void	do_debug(t_coder *coder)
 {

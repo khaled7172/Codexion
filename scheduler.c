@@ -6,7 +6,7 @@
 /*   By: kali <kali@student.42.fr>                  +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2026/04/15 18:13:37 by kali              #+#    #+#             */
-/*   Updated: 2026/04/16 12:12:57 by kali             ###   ########.fr       */
+/*   Updated: 2026/04/18 02:14:37 by kali             ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -29,32 +29,12 @@ void	heap_free(t_heap *h)
 	h->size = 0;
 }
 
-static void	sift_up(t_heap *h)
+static void	sift_down(t_heap *h, int i)
 {
-	int			i;
-	int			parent;
-	t_waiter	tmp;
-
-	i = h->size - 1;
-	while (i > 0)
-	{
-		parent = (i - 1) / 2;
-		if (h->data[parent].key <= h->data[i].key)
-			break ;
-		tmp = h->data[parent];
-		h->data[parent] = h->data[i];
-		h->data[i] = tmp;
-		i = parent;
-	}
-}
-static void	sift_down(t_heap *h)
-{
-	int			i;
 	int			left;
 	int			smallest;
 	t_waiter	tmp;
 
-	i = 0;
 	while (1)
 	{
 		left = 2 * i + 1;
@@ -75,11 +55,25 @@ static void	sift_down(t_heap *h)
 
 void	heap_push(t_heap *h, t_waiter w)
 {
+	int			i;
+	int			parent;
+	t_waiter	tmp;
+
 	if (h->size >= h->cap)
 		return ;
 	h->data[h->size] = w;
 	h->size++;
-	sift_up(h);
+	i = h->size - 1;
+	while (i > 0)
+	{
+		parent = (i - 1) / 2;
+		if (h->data[parent].key <= h->data[i].key)
+			break ;
+		tmp = h->data[parent];
+		h->data[parent] = h->data[i];
+		h->data[i] = tmp;
+		i = parent;
+	}
 }
 
 t_waiter	heap_pop(t_heap *h)
@@ -91,7 +85,7 @@ t_waiter	heap_pop(t_heap *h)
 	if (h->size > 0)
 	{
 		h->data[0] = h->data[h->size];
-		sift_down(h);
+		sift_down(h, 0);
 	}
 	return (top);
 }

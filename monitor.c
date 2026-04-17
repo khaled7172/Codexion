@@ -6,7 +6,7 @@
 /*   By: kali <kali@student.42.fr>                  +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2026/04/15 18:13:40 by kali              #+#    #+#             */
-/*   Updated: 2026/04/17                                     +#+#+#+#+#+   +#+ */
+/*   Updated: 2026/04/18 02:14:26 by kali             ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -28,6 +28,13 @@ static int	all_done(t_sim *sim)
 	return (1);
 }
 
+static void	log_burnout(t_sim *sim, int id, long now)
+{
+	pthread_mutex_lock(&sim->log_lock);
+	printf("%ld %d burned out\n", now - sim->start_time, id);
+	pthread_mutex_unlock(&sim->log_lock);
+}
+
 static int	check_burnout(t_sim *sim)
 {
 	long	now;
@@ -45,15 +52,9 @@ static int	check_burnout(t_sim *sim)
 			if (!sim->stop)
 			{
 				sim->stop = 1;
-
-				pthread_mutex_lock(&sim->log_lock);
-				printf("%ld %d burned out\n",
-					now - sim->start_time,
-					sim->coders[i].id);
-				pthread_mutex_unlock(&sim->log_lock);
+				log_burnout(sim, sim->coders[i].id, now);
 			}
 			pthread_mutex_unlock(&sim->stop_lock);
-
 			return (1);
 		}
 		i++;
@@ -75,16 +76,6 @@ static void	wake_all(t_sim *sim)
 	pthread_mutex_unlock(&sim->state_lock);
 }
 
-static void	set_stop(t_sim *sim)
-{
-	pthread_mutex_lock(&sim->stop_lock);
-	if (!sim->stop)
-		sim->stop = 1;
-	pthread_mutex_unlock(&sim->stop_lock);
-
-	wake_all(sim);
-}
-
 void	*monitor_routine(void *arg)
 {
 	t_sim	*sim;
@@ -92,11 +83,14 @@ void	*monitor_routine(void *arg)
 	sim = (t_sim *)arg;
 	while (1)
 	{
-		usleep(1000);
-		// ft_usleep(1000);
+		ft_usleep(1, sim);
 		if (check_burnout(sim) || all_done(sim))
 		{
-			set_stop(sim);
+			pthread_mutex_lock(&sim->stop_lock);
+			if (!sim->stop)
+				sim->stop = 1;
+			pthread_mutex_unlock(&sim->stop_lock);
+			wake_all(sim);
 			return (NULL);
 		}
 	}
