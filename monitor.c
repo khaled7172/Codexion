@@ -61,11 +61,6 @@ static int	check_burnout(t_sim *sim)
 	return (0);
 }
 
-/*
-** IMPORTANT:
-** Must wake ALL waiting threads after stop,
-** otherwise pthread_cond_wait blocks forever.
-*/
 static void	wake_all(t_sim *sim)
 {
 	int	i;
@@ -98,6 +93,7 @@ void	*monitor_routine(void *arg)
 	while (1)
 	{
 		usleep(1000);
+		// ft_usleep(1000);
 		if (check_burnout(sim) || all_done(sim))
 		{
 			set_stop(sim);

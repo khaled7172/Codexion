@@ -73,10 +73,6 @@ static int	acquire_one(t_coder *coder, t_dongle *dongle)
 	return (1);
 }
 
-/*
-** FIX 3:
-** - Only wake NEXT waiter (not everyone)
-*/
 static void	release_one(t_dongle *dongle, t_sim *sim)
 {
 	dongle->in_use = 0;
@@ -94,7 +90,6 @@ int	acquire_both_dongles(t_coder *coder)
 
 	sim = coder->sim;
 
-	/* Single coder edge case */
 	if (coder->left == coder->right)
 	{
 		pthread_mutex_lock(&sim->state_lock);
@@ -107,7 +102,6 @@ int	acquire_both_dongles(t_coder *coder)
 		return (0);
 	}
 
-	/* Prevent deadlock by ordering */
 	if (coder->left->id < coder->right->id)
 	{
 		first = coder->left;
