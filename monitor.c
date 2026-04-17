@@ -6,7 +6,7 @@
 /*   By: kali <kali@student.42.fr>                  +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2026/04/15 18:13:40 by kali              #+#    #+#             */
-/*   Updated: 2026/04/16 12:14:39 by kali             ###   ########.fr       */
+/*   Updated: 2026/04/17 04:15:40 by kali             ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -33,9 +33,15 @@ static int	check_burnout(t_sim *sim)
 	long	now;
 	long	deadline;
 	int		i;
+	long	ts;
 
 	now = get_time_ms();
 	i = 0;
+	pthread_mutex_lock(&sim->log_lock);
+	sim->stop = 1;
+	ts = get_time_ms() - sim->start_time;
+	printf("%ld %d burned out\n", ts, sim->coders[i].id);
+	pthread_mutex_unlock(&sim->log_lock);
 	while (i < sim->num_coders)
 	{
 		deadline = sim->coders[i].last_compile_time + sim->time_to_burnout;

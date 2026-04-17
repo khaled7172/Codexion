@@ -6,7 +6,7 @@
 /*   By: kali <kali@student.42.fr>                  +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2026/04/15 23:19:20 by kali              #+#    #+#             */
-/*   Updated: 2026/04/16 17:11:22 by kali             ###   ########.fr       */
+/*   Updated: 2026/04/17 04:19:27 by kali             ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -87,9 +87,11 @@ int	acquire_both_dongles(t_coder *coder)
 		pthread_mutex_lock(&sim->state_lock);
 		if (!acquire_one(coder, coder->left))
 			return (pthread_mutex_unlock(&sim->state_lock), 0);
-		pthread_mutex_unlock(&sim->state_lock);
 		log_state(sim, coder->id, "has taken a dongle");
-		return (1);
+		while (!sim->stop)
+			pthread_cond_wait(&coder->cond, &sim->state_lock);
+		pthread_mutex_unlock(&sim->state_lock);
+		return (0);
 	}
 	if (coder->left->id < coder->right->id)
 	{
