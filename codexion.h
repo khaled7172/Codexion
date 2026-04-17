@@ -6,7 +6,7 @@
 /*   By: kali <kali@student.42.fr>                  +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2026/04/15 18:13:17 by kali              #+#    #+#             */
-/*   Updated: 2026/04/16 17:10:37 by kali             ###   ########.fr       */
+/*   Updated: 2026/04/17 04:38:26 by kali             ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -81,6 +81,7 @@ typedef struct s_sim
 	pthread_t		monitor;
 	t_coder			*coders;
 	t_dongle		*dongles;
+	long			global_ticket;
 }	t_sim;
 
 /* utils.c */

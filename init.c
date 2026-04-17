@@ -6,7 +6,7 @@
 /*   By: kali <kali@student.42.fr>                  +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2026/04/15 18:12:56 by kali              #+#    #+#             */
-/*   Updated: 2026/04/16 12:07:20 by kali             ###   ########.fr       */
+/*   Updated: 2026/04/17 04:40:43 by kali             ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -72,6 +72,7 @@ int	init_sim(t_sim *sim, char **av)
 		return (0);
 	sim->stop = 0;
 	sim->start_time = get_time_ms();
+	sim->global_ticket = 0;
 	if (!init_mutexes(sim))
 		return (0);
 	if (!init_dongles(sim))

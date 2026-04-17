@@ -6,7 +6,7 @@
 /*   By: kali <kali@student.42.fr>                  +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2026/04/15 18:13:10 by kali              #+#    #+#             */
-/*   Updated: 2026/04/16 17:10:08 by kali             ###   ########.fr       */
+/*   Updated: 2026/04/17 04:41:17 by kali             ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -17,11 +17,12 @@ static void	do_compile(t_coder *coder)
 	t_sim	*sim;
 
 	sim = coder->sim;
-	coder->last_compile_time = get_time_ms();
 	log_state(sim, coder->id, "is compiling");
 	ft_usleep(sim->time_to_compile, sim);
+	coder->last_compile_time = get_time_ms();
 	coder->compile_count++;
 }
+
 
 static void	do_debug(t_coder *coder)
 {
@@ -40,9 +41,12 @@ void	*coder_routine(void *arg)
 	t_coder	*coder;
 
 	coder = (t_coder *)arg;
-	ft_usleep((long)(coder->id - 1), coder->sim);
+	if (coder->id % 2 == 0)
+		ft_usleep(coder->sim->time_to_compile / 2, coder->sim);
 	while (!sim_stopped(coder->sim))
 	{
+		if (coder->id % 2 == 0)
+			ft_usleep(1, coder->sim);
 		if (!acquire_both_dongles(coder))
 			return (NULL);
 		do_compile(coder);

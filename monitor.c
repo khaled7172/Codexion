@@ -6,7 +6,7 @@
 /*   By: kali <kali@student.42.fr>                  +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2026/04/15 18:13:40 by kali              #+#    #+#             */
-/*   Updated: 2026/04/17 04:15:40 by kali             ###   ########.fr       */
+/*   Updated: 2026/04/17                                     +#+#+#+#+#+   +#+ */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -33,21 +33,27 @@ static int	check_burnout(t_sim *sim)
 	long	now;
 	long	deadline;
 	int		i;
-	long	ts;
 
 	now = get_time_ms();
 	i = 0;
-	pthread_mutex_lock(&sim->log_lock);
-	sim->stop = 1;
-	ts = get_time_ms() - sim->start_time;
-	printf("%ld %d burned out\n", ts, sim->coders[i].id);
-	pthread_mutex_unlock(&sim->log_lock);
 	while (i < sim->num_coders)
 	{
 		deadline = sim->coders[i].last_compile_time + sim->time_to_burnout;
 		if (now >= deadline)
 		{
-			log_state(sim, sim->coders[i].id, "burned out");
+			pthread_mutex_lock(&sim->stop_lock);
+			if (!sim->stop)
+			{
+				sim->stop = 1;
+
+				pthread_mutex_lock(&sim->log_lock);
+				printf("%ld %d burned out\n",
+					now - sim->start_time,
+					sim->coders[i].id);
+				pthread_mutex_unlock(&sim->log_lock);
+			}
+			pthread_mutex_unlock(&sim->stop_lock);
+
 			return (1);
 		}
 		i++;
@@ -55,6 +61,11 @@ static int	check_burnout(t_sim *sim)
 	return (0);
 }
 
+/*
+** IMPORTANT:
+** Must wake ALL waiting threads after stop,
+** otherwise pthread_cond_wait blocks forever.
+*/
 static void	wake_all(t_sim *sim)
 {
 	int	i;
@@ -72,8 +83,10 @@ static void	wake_all(t_sim *sim)
 static void	set_stop(t_sim *sim)
 {
 	pthread_mutex_lock(&sim->stop_lock);
-	sim->stop = 1;
+	if (!sim->stop)
+		sim->stop = 1;
 	pthread_mutex_unlock(&sim->stop_lock);
+
 	wake_all(sim);
 }
 
