@@ -6,18 +6,15 @@
 /*   By: kali <kali@student.42.fr>                  +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2026/04/15 18:13:17 by kali              #+#    #+#             */
-/*   Updated: 2026/04/18 02:47:21 by kali             ###   ########.fr       */
+/*   Updated: 2026/04/18 13:49:12 by kali             ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
 #ifndef CODEXION_H
 # define CODEXION_H
 
-# define _XOPEN_SOURCE 600
-
 # include <pthread.h>
 # include <sys/time.h>
-# include <unistd.h>
 # include <stdlib.h>
 # include <stdio.h>
 # include <string.h>

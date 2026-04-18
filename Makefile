@@ -1,7 +1,7 @@
 NAME = codexion
 
 CC = cc
-CFLAGS = -Wall -Wextra -Werror -pthread -std=c89
+CFLAGS = -Wall -Wextra -Werror -pthread
 
 SRCS = main.c \
 	   init.c \
