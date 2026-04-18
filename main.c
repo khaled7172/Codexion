@@ -6,7 +6,7 @@
 /*   By: kali <kali@student.42.fr>                  +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2026/04/15 18:13:28 by kali              #+#    #+#             */
-/*   Updated: 2026/04/16 12:08:01 by kali             ###   ########.fr       */
+/*   Updated: 2026/04/18 22:57:24 by kali             ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -53,6 +53,8 @@ int	main(int argc, char **argv)
 	memset(sim, 0, sizeof(t_sim));
 	if (!init_sim(sim, argv))
 		return (free(sim), 1);
+	if (sim->must_compile == 0)
+		return (free_all(sim), 0);
 	start_threads(sim);
 	join_threads(sim);
 	free_all(sim);

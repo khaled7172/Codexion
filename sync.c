@@ -6,7 +6,7 @@
 /*   By: kali <kali@student.42.fr>                  +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2026/04/15 23:19:20 by kali              #+#    #+#             */
-/*   Updated: 2026/04/18 02:13:16 by kali             ###   ########.fr       */
+/*   Updated: 2026/04/18 22:48:02 by kali             ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -14,8 +14,9 @@
 
 static int	acquire_one(t_coder *coder, t_dongle *dongle)
 {
-	t_sim		*sim;
-	t_waiter	w;
+	t_sim			*sim;
+	t_waiter		w;
+	struct timespec	ts;
 
 	sim = coder->sim;
 	w.key = sched_key(coder, dongle);
@@ -31,7 +32,9 @@ static int	acquire_one(t_coder *coder, t_dongle *dongle)
 			&& !dongle->in_use
 			&& get_time_ms() >= dongle->ready_at)
 			break ;
-		pthread_cond_wait(&coder->cond, &sim->state_lock);
+		ts.tv_sec = dongle->ready_at / 1000;
+		ts.tv_nsec = (dongle->ready_at % 1000) * 1000000;
+		pthread_cond_timedwait(&coder->cond, &sim->state_lock, &ts);
 	}
 	heap_pop(&dongle->queue);
 	dongle->in_use = 1;
@@ -58,7 +61,7 @@ static void	rollback_first(t_dongle *first, t_sim *sim)
 	first->in_use = 0;
 	first->ready_at = get_time_ms() + sim->cooldown;
 	if (first->queue.size > 0)
-		pthread_cond_signal(first->queue.data[0].cond);
+		pthread_cond_broadcast(first->queue.data[0].cond);
 	pthread_mutex_unlock(&sim->state_lock);
 }
 
