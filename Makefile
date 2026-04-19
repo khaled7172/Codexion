@@ -6,25 +6,25 @@
 #    By: khhammou <khhammou@student.42.fr>          +#+  +:+       +#+         #
 #                                                 +#+#+#+#+#+   +#+            #
 #    Created: 2026/04/20 01:27:34 by khhammou          #+#    #+#              #
-#    Updated: 2026/04/20 01:27:35 by khhammou         ###   ########.fr        #
+#    Updated: 2026/04/20 02:31:53 by khhammou         ###   ########.fr        #
 #                                                                              #
 # **************************************************************************** #
 
 NAME = codexion
 
 CC = cc
-CFLAGS = -Wall -Wextra -Werror -pthread 
+CFLAGS = -Wall -Wextra -Werror -pthread -std=c89
 
-SRCS = main.c \
-	   init.c \
-	   free.c \
-	   parse.c \
-	   utils.c \
-	   log.c \
-	   scheduler.c \
-	   sync.c \
-	   monitor.c \
-	   coder_routine.c
+SRCS = coders/free.c \
+		coders/init.c \
+		coders/log.c \
+		coders/main.c \
+		coders/monitor.c \
+		coders/parse.c \
+		coders/scheduler.c \
+		coders/sync.c \
+		coders/utils.c \
+		coders/coder_routine.c
 
 OBJS = $(SRCS:.c=.o)
 
