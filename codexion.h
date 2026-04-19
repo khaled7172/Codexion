@@ -6,7 +6,7 @@
 /*   By: kali <kali@student.42.fr>                  +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2026/04/15 18:13:17 by kali              #+#    #+#             */
-/*   Updated: 2026/04/19 04:50:12 by kali             ###   ########.fr       */
+/*   Updated: 2026/04/19 18:38:06 by kali             ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -18,6 +18,7 @@
 # include <stdlib.h>
 # include <stdio.h>
 # include <string.h>
+# include <unistd.h>
 
 typedef enum e_scheduler
 {
@@ -73,9 +74,9 @@ typedef struct s_sim
 	long			start_time;
 	int				stop;
 	pthread_mutex_t	stop_lock;
-	pthread_cond_t	sleep_cond;
 	pthread_mutex_t	log_lock;
 	pthread_mutex_t	ticket_lock;
+	pthread_mutex_t	state_lock;
 	pthread_t		monitor;
 	t_coder			*coders;
 	t_dongle		*dongles;
