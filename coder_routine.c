@@ -6,7 +6,7 @@
 /*   By: kali <kali@student.42.fr>                  +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2026/04/15 18:13:10 by kali              #+#    #+#             */
-/*   Updated: 2026/04/18 02:14:52 by kali             ###   ########.fr       */
+/*   Updated: 2026/04/19 04:37:00 by kali             ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -19,8 +19,10 @@ static void	do_compile(t_coder *coder)
 	sim = coder->sim;
 	log_state(sim, coder->id, "is compiling");
 	ft_usleep(sim->time_to_compile, sim);
+	pthread_mutex_lock(&sim->stop_lock);
 	coder->last_compile_time = get_time_ms();
 	coder->compile_count++;
+	pthread_mutex_unlock(&sim->stop_lock);
 }
 
 static void	do_debug(t_coder *coder)

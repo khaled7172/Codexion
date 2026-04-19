@@ -6,30 +6,27 @@
 /*   By: kali <kali@student.42.fr>                  +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2026/04/18 00:00:00 by khhammou          #+#    #+#             */
-/*   Updated: 2026/04/18 02:13:37 by kali             ###   ########.fr       */
+/*   Updated: 2026/04/19 04:50:31 by kali             ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
 #include "codexion.h"
 
-static void	release_dongle(t_dongle *d, t_sim *sim)
+static void	release_dongle(t_dongle *d, long cooldown)
 {
+	pthread_mutex_lock(&d->lock);
 	d->in_use = 0;
-	d->ready_at = get_time_ms() + sim->cooldown;
+	d->ready_at = get_time_ms() + cooldown;
 	if (d->queue.size > 0)
-		pthread_cond_signal(d->queue.data[0].cond);
+		pthread_cond_broadcast(d->queue.data[0].cond);
+	pthread_mutex_unlock(&d->lock);
 }
 
 void	release_both_dongles(t_coder *coder)
 {
-	t_sim	*sim;
-
-	sim = coder->sim;
-	pthread_mutex_lock(&sim->state_lock);
-	release_dongle(coder->left, sim);
+	release_dongle(coder->left, coder->sim->cooldown);
 	if (coder->left != coder->right)
-		release_dongle(coder->right, sim);
-	pthread_mutex_unlock(&sim->state_lock);
+		release_dongle(coder->right, coder->sim->cooldown);
 }
 
 static void	free_coders(t_sim *sim)
@@ -53,6 +50,7 @@ static void	free_dongles(t_sim *sim)
 	while (i < sim->num_coders)
 	{
 		heap_free(&sim->dongles[i].queue);
+		pthread_mutex_destroy(&sim->dongles[i].lock);
 		i++;
 	}
 	free(sim->dongles);
@@ -64,8 +62,9 @@ void	free_all(t_sim *sim)
 		free_coders(sim);
 	if (sim->dongles)
 		free_dongles(sim);
+	pthread_cond_destroy(&sim->sleep_cond);
 	pthread_mutex_destroy(&sim->stop_lock);
 	pthread_mutex_destroy(&sim->log_lock);
-	pthread_mutex_destroy(&sim->state_lock);
+	pthread_mutex_destroy(&sim->ticket_lock);
 	free(sim);
 }

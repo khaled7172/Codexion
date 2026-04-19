@@ -6,7 +6,7 @@
 /*   By: kali <kali@student.42.fr>                  +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2026/04/15 18:12:56 by kali              #+#    #+#             */
-/*   Updated: 2026/04/18 02:14:44 by kali             ###   ########.fr       */
+/*   Updated: 2026/04/19 04:50:21 by kali             ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -25,6 +25,8 @@ static int	init_dongles(t_sim *sim)
 		sim->dongles[i].id = i;
 		sim->dongles[i].in_use = 0;
 		sim->dongles[i].ready_at = 0;
+		if (pthread_mutex_init(&sim->dongles[i].lock, NULL) != 0)
+			return (0);
 		if (!heap_init(&sim->dongles[i].queue, sim->num_coders))
 			return (0);
 		i++;
@@ -61,7 +63,9 @@ static int	init_mutexes(t_sim *sim)
 		return (0);
 	if (pthread_mutex_init(&sim->log_lock, NULL) != 0)
 		return (0);
-	if (pthread_mutex_init(&sim->state_lock, NULL) != 0)
+	if (pthread_mutex_init(&sim->ticket_lock, NULL) != 0)
+		return (0);
+	if (pthread_cond_init(&sim->sleep_cond, NULL) != 0)
 		return (0);
 	return (1);
 }
