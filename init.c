@@ -6,7 +6,7 @@
 /*   By: kali <kali@student.42.fr>                  +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2026/04/15 18:12:56 by kali              #+#    #+#             */
-/*   Updated: 2026/04/19 18:37:51 by kali             ###   ########.fr       */
+/*   Updated: 2026/04/20 01:19:59 by kali             ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -65,7 +65,9 @@ static int	init_mutexes(t_sim *sim)
 		return (0);
 	if (pthread_mutex_init(&sim->ticket_lock, NULL) != 0)
 		return (0);
-	if (pthread_mutex_init(&sim->state_lock, NULL) != 0)
+	if (pthread_mutex_init(&sim->sleep_mutex, NULL) != 0)
+		return (0);
+	if (pthread_cond_init(&sim->sleep_cond, NULL) != 0)
 		return (0);
 	return (1);
 }
@@ -75,6 +77,7 @@ int	init_sim(t_sim *sim, char **av)
 	if (!parse_args(sim, av))
 		return (0);
 	sim->stop = 0;
+	sim->burned_out = 0;
 	sim->start_time = get_time_ms();
 	sim->global_ticket = 0;
 	if (!init_mutexes(sim))

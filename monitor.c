@@ -6,7 +6,7 @@
 /*   By: kali <kali@student.42.fr>                  +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2026/04/15 18:13:40 by kali              #+#    #+#             */
-/*   Updated: 2026/04/19 18:57:15 by kali             ###   ########.fr       */
+/*   Updated: 2026/04/20 01:20:21 by kali             ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -15,7 +15,6 @@
 static int	all_done(t_sim *sim)
 {
 	int	i;
-	int	count;
 
 	if (sim->must_compile == 0)
 		return (1);
@@ -23,8 +22,7 @@ static int	all_done(t_sim *sim)
 	i = 0;
 	while (i < sim->num_coders)
 	{
-		count = sim->coders[i].compile_count;
-		if (count < sim->must_compile)
+		if (sim->coders[i].compile_count < sim->must_compile)
 			return (pthread_mutex_unlock(&sim->stop_lock), 0);
 		i++;
 	}
@@ -38,6 +36,7 @@ static void	set_burnout(t_sim *sim, int id, long now)
 	if (!sim->stop)
 	{
 		sim->stop = 1;
+		sim->burned_out = 1;
 		pthread_mutex_lock(&sim->log_lock);
 		printf("%ld %d burned out\n", now - sim->start_time, id);
 		pthread_mutex_unlock(&sim->log_lock);
@@ -68,23 +67,27 @@ static int	check_burnout(t_sim *sim)
 	return (0);
 }
 
-/*
-** Wake every coder that may be blocked in acquire_one's timedwait.
-** Each coder->cond is paired with a specific dongle->lock in acquire_one,
-** so broadcast while holding that dongle's lock.
-*/
 static void	wake_all(t_sim *sim)
 {
 	int	i;
+	int	j;
 
 	pthread_mutex_lock(&sim->stop_lock);
 	sim->stop = 1;
 	pthread_mutex_unlock(&sim->stop_lock);
+	pthread_mutex_lock(&sim->sleep_mutex);
+	pthread_cond_broadcast(&sim->sleep_cond);
+	pthread_mutex_unlock(&sim->sleep_mutex);
 	i = 0;
 	while (i < sim->num_coders)
 	{
 		pthread_mutex_lock(&sim->dongles[i].lock);
-		pthread_cond_broadcast(&sim->coders[i].cond);
+		j = 0;
+		while (j < sim->num_coders)
+		{
+			pthread_cond_broadcast(&sim->coders[j].cond);
+			j++;
+		}
 		pthread_mutex_unlock(&sim->dongles[i].lock);
 		i++;
 	}

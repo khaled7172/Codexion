@@ -6,7 +6,7 @@
 /*   By: kali <kali@student.42.fr>                  +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2026/04/15 18:13:10 by kali              #+#    #+#             */
-/*   Updated: 2026/04/19 18:40:25 by kali             ###   ########.fr       */
+/*   Updated: 2026/04/20 01:20:41 by kali             ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -39,6 +39,18 @@ static void	do_refactor(t_coder *coder)
 	ft_usleep(coder->sim->time_to_refactor, coder->sim);
 }
 
+static int	reached_quota(t_coder *coder)
+{
+	int	count;
+	int	must;
+
+	pthread_mutex_lock(&coder->sim->stop_lock);
+	count = coder->compile_count;
+	must = coder->sim->must_compile;
+	pthread_mutex_unlock(&coder->sim->stop_lock);
+	return (must > 0 && count >= must);
+}
+
 void	*coder_routine(void *arg)
 {
 	t_coder	*coder;
@@ -48,17 +60,13 @@ void	*coder_routine(void *arg)
 		ft_usleep(coder->sim->time_to_compile / 2, coder->sim);
 	while (!sim_stopped(coder->sim))
 	{
-		if (coder->id % 2 == 0)
-			ft_usleep(1, coder->sim);
+		if (reached_quota(coder))
+			return (NULL);
 		if (!acquire_both_dongles(coder))
 			return (NULL);
 		do_compile(coder);
 		release_both_dongles(coder);
-		if (sim_stopped(coder->sim))
-			return (NULL);
 		do_debug(coder);
-		if (sim_stopped(coder->sim))
-			return (NULL);
 		do_refactor(coder);
 	}
 	return (NULL);

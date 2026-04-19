@@ -5,8 +5,8 @@
 /*                                                    +:+ +:+         +:+     */
 /*   By: kali <kali@student.42.fr>                  +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
-/*   Created: 2026/04/15 18:13:31 by kali              #+#    #+#             */
-/*   Updated: 2026/04/19 19:07:18 by kali             ###   ########.fr       */
+/*   Created: 2026/04/20 01:19:17 by kali              #+#    #+#             */
+/*   Updated: 2026/04/20 01:19:20 by kali             ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -66,20 +66,19 @@ long	sched_key(t_coder *coder, t_dongle *dongle)
 
 void	ft_usleep(long ms, t_sim *sim)
 {
-	long	start;
-	long	now;
-	int		stopped;
+	struct timeval	tv;
+	struct timespec	ts;
 
-	start = get_time_ms();
-	while (1)
+	gettimeofday(&tv, NULL);
+	ts.tv_sec = tv.tv_sec + ms / 1000;
+	ts.tv_nsec = tv.tv_usec * 1000 + (ms % 1000) * 1000000;
+	if (ts.tv_nsec >= 1000000000)
 	{
-		pthread_mutex_lock(&sim->stop_lock);
-		stopped = sim->stop;
-		pthread_mutex_unlock(&sim->stop_lock);
-		if (stopped)
-			return ;
-		now = get_time_ms();
-		if (now - start >= ms)
-			return ;
+		ts.tv_sec++;
+		ts.tv_nsec -= 1000000000;
 	}
+	pthread_mutex_lock(&sim->sleep_mutex);
+	if (!sim->stop)
+		pthread_cond_timedwait(&sim->sleep_cond, &sim->sleep_mutex, &ts);
+	pthread_mutex_unlock(&sim->sleep_mutex);
 }

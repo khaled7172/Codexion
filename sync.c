@@ -6,7 +6,7 @@
 /*   By: kali <kali@student.42.fr>                  +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2026/04/15 23:19:20 by kali              #+#    #+#             */
-/*   Updated: 2026/04/19 18:39:53 by kali             ###   ########.fr       */
+/*   Updated: 2026/04/20 01:20:30 by kali             ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -29,25 +29,21 @@ static void	remove_from_queue(t_heap *h, int coder_id)
 	}
 }
 
-/*
-** acquire_one: called with dongle->lock already held.
-** Waits under dongle->lock until this coder is front of queue,
-** dongle free, cooldown passed.
-** On stop: cleans queue, unlocks dongle, returns 0.
-** On success: pops queue, marks in_use, leaves lock held, returns 1.
-*/
-static int	acquire_one(t_coder *coder, t_dongle *dongle)
+static int	dongle_ready(t_coder *coder, t_dongle *d)
+{
+	return (d->queue.size > 0
+		&& d->queue.data[0].coder_id == coder->id
+		&& !d->in_use
+		&& get_time_ms() >= d->ready_at);
+}
+
+static int	wait_for_dongle(t_coder *coder, t_dongle *dongle)
 {
 	t_sim			*sim;
-	t_waiter		w;
 	struct timespec	ts;
 	int				stopped;
 
 	sim = coder->sim;
-	w.key = sched_key(coder, dongle);
-	w.coder_id = coder->id;
-	w.cond = &coder->cond;
-	heap_push(&dongle->queue, w);
 	while (1)
 	{
 		pthread_mutex_lock(&sim->stop_lock);
@@ -59,15 +55,25 @@ static int	acquire_one(t_coder *coder, t_dongle *dongle)
 			pthread_mutex_unlock(&dongle->lock);
 			return (0);
 		}
-		if (dongle->queue.size > 0
-			&& dongle->queue.data[0].coder_id == coder->id
-			&& !dongle->in_use
-			&& get_time_ms() >= dongle->ready_at)
+		if (dongle_ready(coder, dongle))
 			break ;
 		ts.tv_sec = dongle->ready_at / 1000;
 		ts.tv_nsec = (dongle->ready_at % 1000) * 1000000;
 		pthread_cond_timedwait(&coder->cond, &dongle->lock, &ts);
 	}
+	return (1);
+}
+
+static int	acquire_one(t_coder *coder, t_dongle *dongle)
+{
+	t_waiter	w;
+
+	w.key = sched_key(coder, dongle);
+	w.coder_id = coder->id;
+	w.cond = &coder->cond;
+	heap_push(&dongle->queue, w);
+	if (!wait_for_dongle(coder, dongle))
+		return (0);
 	heap_pop(&dongle->queue);
 	dongle->in_use = 1;
 	return (1);
@@ -113,64 +119,68 @@ static void	order_dongles(t_coder *c, t_dongle **first, t_dongle **second)
 	}
 }
 
-/*
-** Lock both dongles simultaneously without ABBA deadlock:
-** Hold first->lock, trylock second. If trylock fails,
-** drop first, yield, retry. ID ordering ensures no cycle.
-*/
-static int	lock_both(t_coder *coder, t_dongle *first, t_dongle *second)
+static void	release_on_stop(t_dongle *first, t_dongle *second)
 {
-	t_sim	*sim;
-	int		stopped;
-
-	sim = coder->sim;
-	while (1)
-	{
-		pthread_mutex_lock(&sim->stop_lock);
-		stopped = sim->stop;
-		pthread_mutex_unlock(&sim->stop_lock);
-		if (stopped)
-			return (0);
-		pthread_mutex_lock(&first->lock);
-		if (pthread_mutex_trylock(&second->lock) == 0)
-			return (1);
-		pthread_mutex_unlock(&first->lock);
-		ft_usleep(1, coder->sim);
-	}
-}
-
-static void	rollback_first(t_dongle *first, t_sim *sim)
-{
+	pthread_mutex_lock(&second->lock);
+	second->in_use = 0;
+	second->ready_at = 0;
+	pthread_mutex_unlock(&second->lock);
 	pthread_mutex_lock(&first->lock);
 	first->in_use = 0;
-	first->ready_at = get_time_ms() + sim->cooldown;
+	first->ready_at = 0;
 	if (first->queue.size > 0)
 		pthread_cond_signal(first->queue.data[0].cond);
 	pthread_mutex_unlock(&first->lock);
+}
+
+static int	acquire_second(t_coder *c, t_dongle *first, t_dongle *second)
+{
+	t_waiter	w;
+
+	pthread_mutex_lock(&second->lock);
+	w.key = sched_key(c, second);
+	w.coder_id = c->id;
+	w.cond = &c->cond;
+	heap_push(&second->queue, w);
+	if (!wait_for_dongle(c, second))
+	{
+		pthread_mutex_lock(&first->lock);
+		first->in_use = 0;
+		first->ready_at = 0;
+		if (first->queue.size > 0)
+			pthread_cond_signal(first->queue.data[0].cond);
+		pthread_mutex_unlock(&first->lock);
+		return (0);
+	}
+	heap_pop(&second->queue);
+	second->in_use = 1;
+	pthread_mutex_unlock(&second->lock);
+	return (1);
 }
 
 int	acquire_both_dongles(t_coder *coder)
 {
 	t_dongle	*first;
 	t_dongle	*second;
+	t_waiter	w;
 
 	if (coder->left == coder->right)
 		return (handle_single(coder));
 	order_dongles(coder, &first, &second);
-	if (!lock_both(coder, first, second))
+	pthread_mutex_lock(&first->lock);
+	w.key = sched_key(coder, first);
+	w.coder_id = coder->id;
+	w.cond = &coder->cond;
+	heap_push(&first->queue, w);
+	if (!wait_for_dongle(coder, first))
 		return (0);
-	if (!acquire_one(coder, first))
-	{
-		pthread_mutex_unlock(&second->lock);
-		return (0);
-	}
-	if (!acquire_one(coder, second))
-	{
-		rollback_first(first, coder->sim);
-		return (0);
-	}
-	pthread_mutex_unlock(&second->lock);
+	heap_pop(&first->queue);
+	first->in_use = 1;
 	pthread_mutex_unlock(&first->lock);
+	if (!acquire_second(coder, first, second))
+		return (0);
+	if (sim_stopped(coder->sim))
+		return (release_on_stop(first, second), 0);
 	log_state(coder->sim, coder->id, "has taken a dongle");
 	log_state(coder->sim, coder->id, "has taken a dongle");
 	return (1);

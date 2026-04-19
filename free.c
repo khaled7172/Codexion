@@ -6,7 +6,7 @@
 /*   By: kali <kali@student.42.fr>                  +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2026/04/18 00:00:00 by khhammou          #+#    #+#             */
-/*   Updated: 2026/04/19 18:38:17 by kali             ###   ########.fr       */
+/*   Updated: 2026/04/20 01:20:11 by kali             ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -62,9 +62,10 @@ void	free_all(t_sim *sim)
 		free_coders(sim);
 	if (sim->dongles)
 		free_dongles(sim);
+	pthread_cond_destroy(&sim->sleep_cond);
+	pthread_mutex_destroy(&sim->sleep_mutex);
 	pthread_mutex_destroy(&sim->stop_lock);
 	pthread_mutex_destroy(&sim->log_lock);
 	pthread_mutex_destroy(&sim->ticket_lock);
-	pthread_mutex_destroy(&sim->state_lock);
 	free(sim);
 }
