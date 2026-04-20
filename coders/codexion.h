@@ -5,8 +5,8 @@
 /*                                                    +:+ +:+         +:+     */
 /*   By: khhammou <khhammou@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
-/*   Created: 2026/04/20 02:34:17 by khhammou          #+#    #+#             */
-/*   Updated: 2026/04/20 02:34:18 by khhammou         ###   ########.fr       */
+/*   Created: 2026/04/15 18:13:17 by kali              #+#    #+#             */
+/*   Updated: 2026/04/20 12:30:36 by khhammou         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -29,7 +29,7 @@ typedef struct s_waiter
 {
 	long			key;
 	int				coder_id;
-	pthread_cond_t	*cond;
+	int				*notified;
 }	t_waiter;
 
 typedef struct s_heap
@@ -53,7 +53,9 @@ typedef struct s_coder
 	int				id;
 	long			last_compile_time;
 	int				compile_count;
+	int				notified;
 	pthread_cond_t	cond;
+	pthread_mutex_t	cond_lock;
 	t_dongle		*left;
 	t_dongle		*right;
 	pthread_t		thread;

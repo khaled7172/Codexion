@@ -5,28 +5,43 @@
 /*                                                    +:+ +:+         +:+     */
 /*   By: khhammou <khhammou@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
-/*   Created: 2026/04/20 02:34:26 by khhammou          #+#    #+#             */
-/*   Updated: 2026/04/20 02:34:27 by khhammou         ###   ########.fr       */
+/*   Created: 2026/04/18 00:00:00 by khhammou          #+#    #+#             */
+/*   Updated: 2026/04/20 12:30:44 by khhammou         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
 #include "codexion.h"
 
-static void	release_dongle(t_dongle *d, long cooldown)
+static void	notify_front(t_dongle *d, t_sim *sim)
+{
+	t_coder	*c;
+
+	if (d->queue.size == 0)
+		return ;
+	c = &sim->coders[d->queue.data[0].coder_id - 1];
+	pthread_mutex_lock(&c->cond_lock);
+	c->notified = 1;
+	pthread_cond_signal(&c->cond);
+	pthread_mutex_unlock(&c->cond_lock);
+}
+
+static void	release_dongle(t_dongle *d, long cooldown, t_sim *sim)
 {
 	pthread_mutex_lock(&d->lock);
 	d->in_use = 0;
 	d->ready_at = get_time_ms() + cooldown;
-	if (d->queue.size > 0)
-		pthread_cond_signal(d->queue.data[0].cond);
+	notify_front(d, sim);
 	pthread_mutex_unlock(&d->lock);
 }
 
 void	release_both_dongles(t_coder *coder)
 {
-	release_dongle(coder->left, coder->sim->cooldown);
+	t_sim	*sim;
+
+	sim = coder->sim;
+	release_dongle(coder->left, sim->cooldown, sim);
 	if (coder->left != coder->right)
-		release_dongle(coder->right, coder->sim->cooldown);
+		release_dongle(coder->right, sim->cooldown, sim);
 }
 
 static void	free_coders(t_sim *sim)
@@ -37,6 +52,7 @@ static void	free_coders(t_sim *sim)
 	while (i < sim->num_coders)
 	{
 		pthread_cond_destroy(&sim->coders[i].cond);
+		pthread_mutex_destroy(&sim->coders[i].cond_lock);
 		i++;
 	}
 	free(sim->coders);

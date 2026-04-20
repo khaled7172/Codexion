@@ -5,8 +5,8 @@
 /*                                                    +:+ +:+         +:+     */
 /*   By: khhammou <khhammou@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
-/*   Created: 2026/04/20 02:35:00 by khhammou          #+#    #+#             */
-/*   Updated: 2026/04/20 02:35:01 by khhammou         ###   ########.fr       */
+/*   Created: 2026/04/15 18:13:40 by kali              #+#    #+#             */
+/*   Updated: 2026/04/20 12:41:13 by khhammou         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -70,7 +70,6 @@ static int	check_burnout(t_sim *sim)
 static void	wake_all(t_sim *sim)
 {
 	int	i;
-	int	j;
 
 	pthread_mutex_lock(&sim->stop_lock);
 	sim->stop = 1;
@@ -81,12 +80,32 @@ static void	wake_all(t_sim *sim)
 	i = 0;
 	while (i < sim->num_coders)
 	{
+		pthread_mutex_lock(&sim->coders[i].cond_lock);
+		sim->coders[i].notified = 1;
+		pthread_cond_broadcast(&sim->coders[i].cond);
+		pthread_mutex_unlock(&sim->coders[i].cond_lock);
+		i++;
+	}
+}
+
+static void	check_cooldowns(t_sim *sim)
+{
+	t_coder	*c;
+	int		i;
+
+	i = 0;
+	while (i < sim->num_coders)
+	{
 		pthread_mutex_lock(&sim->dongles[i].lock);
-		j = 0;
-		while (j < sim->num_coders)
+		if (sim->dongles[i].queue.size > 0
+			&& !sim->dongles[i].in_use
+			&& get_time_ms() >= sim->dongles[i].ready_at)
 		{
-			pthread_cond_broadcast(&sim->coders[j].cond);
-			j++;
+			c = &sim->coders[sim->dongles[i].queue.data[0].coder_id - 1];
+			pthread_mutex_lock(&c->cond_lock);
+			c->notified = 1;
+			pthread_cond_signal(&c->cond);
+			pthread_mutex_unlock(&c->cond_lock);
 		}
 		pthread_mutex_unlock(&sim->dongles[i].lock);
 		i++;
@@ -101,6 +120,7 @@ void	*monitor_routine(void *arg)
 	while (1)
 	{
 		ft_usleep(1, sim);
+		check_cooldowns(sim);
 		if (check_burnout(sim) || all_done(sim))
 		{
 			wake_all(sim);

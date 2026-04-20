@@ -5,8 +5,8 @@
 /*                                                    +:+ +:+         +:+     */
 /*   By: khhammou <khhammou@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
-/*   Created: 2026/04/20 02:34:37 by khhammou          #+#    #+#             */
-/*   Updated: 2026/04/20 02:34:38 by khhammou         ###   ########.fr       */
+/*   Created: 2026/04/15 18:12:56 by kali              #+#    #+#             */
+/*   Updated: 2026/04/20 12:30:56 by khhammou         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -46,11 +46,14 @@ static int	init_coders(t_sim *sim)
 	{
 		sim->coders[i].id = i + 1;
 		sim->coders[i].compile_count = 0;
+		sim->coders[i].notified = 0;
 		sim->coders[i].last_compile_time = sim->start_time;
 		sim->coders[i].left = &sim->dongles[i];
 		sim->coders[i].right = &sim->dongles[(i + 1) % sim->num_coders];
 		sim->coders[i].sim = sim;
 		if (pthread_cond_init(&sim->coders[i].cond, NULL) != 0)
+			return (0);
+		if (pthread_mutex_init(&sim->coders[i].cond_lock, NULL) != 0)
 			return (0);
 		i++;
 	}
