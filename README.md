@@ -134,4 +134,4 @@ pthread_mutex_unlock(&sim->stop_lock);
 
 ### AI usage
 
-Claude (Anthropic) was used throughout this project for: code review and bug identification (data races, deadlock analysis, helgrind error interpretation), architectural decisions (per-coder condvar design, lock ordering strategy), implementing fixes across multiple files, writing the test script, and drafting this README. All generated code was reviewed, tested, and understood before inclusion.
+Claude (Anthropic) was used throughout this project for: code review and bug identification (data races, deadlock analysis, helgrind error interpretation), architectural decisions (per-coder condvar design, lock ordering strategy)
