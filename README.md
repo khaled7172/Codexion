@@ -8,6 +8,20 @@ Codexion is a concurrency simulation inspired by the classic Dining Philosophers
 
 The simulation stops either when every coder has compiled at least a required number of times, or when a coder fails to start a new compile within the burnout deadline.
 
+Types of waiting:
+Blocking wait
+pthread_cond_wait(&cond, &mutex);
+it sleeps until someone signaled and releases mutex while sleeping and blocks thread and when woken in re-acquires mutex before returning
+woken up by pthread_cond_signal or broadcast
+
+pthread_cond_timedwait(time-limited wait)
+pthread_cond_timedwait(&cond, &mutex, &abstime);
+absolute time (abstime)
+it waits until signal or timeout
+for basially sleep for 1ms or wake early if sleep_cond is signaled
+or timeout expires
+its woken up by broadcast on the sleep cond
+
 ## Instructions
 
 ### Compilation
@@ -50,16 +64,6 @@ All arguments are mandatory. All time values are in milliseconds.
 # Burnout scenario
 ./codexion 2 300 400 100 100 5 0 fifo
 ```
-
-### Testing
-
-A Python test script is included:
-
-```bash
-python3 test_codexion.py ./codexion
-```
-
-Covers: invalid arguments, normal completion (last line = `is refactoring`), burnout detection (last line = `burned out`), burnout timing precision (≤ 20ms), log format validation (2 dongle grabs per compile), and timestamp monotonicity.
 
 ## Blocking cases handled
 
