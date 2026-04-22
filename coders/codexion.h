@@ -6,7 +6,7 @@
 /*   By: khhammou <khhammou@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2026/04/15 18:13:17 by kali              #+#    #+#             */
-/*   Updated: 2026/04/20 12:30:36 by khhammou         ###   ########.fr       */
+/*   Updated: 2026/04/22 20:13:00 by khhammou         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -120,6 +120,10 @@ void		*monitor_routine(void *arg);
 
 /* coder_routine.c */
 void		*coder_routine(void *arg);
+void		wake_all(t_sim *sim);
+void		set_burnout(t_sim *sim, int id, long now);
+int			all_done(t_sim *sim);
+int			acquire_one(t_coder *coder, t_dongle *dongle);
 
 /* main.c */
 void		start_threads(t_sim *sim);

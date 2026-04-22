@@ -6,7 +6,7 @@
 #    By: khhammou <khhammou@student.42.fr>          +#+  +:+       +#+         #
 #                                                 +#+#+#+#+#+   +#+            #
 #    Created: 2026/04/20 01:27:34 by khhammou          #+#    #+#              #
-#    Updated: 2026/04/20 02:31:53 by khhammou         ###   ########.fr        #
+#    Updated: 2026/04/22 20:09:54 by khhammou         ###   ########.fr        #
 #                                                                              #
 # **************************************************************************** #
 
@@ -24,7 +24,10 @@ SRCS = coders/free.c \
 		coders/scheduler.c \
 		coders/sync.c \
 		coders/utils.c \
-		coders/coder_routine.c
+		coders/coder_routine.c \
+		coders/monitor_utils.c \
+		coders/release.c \
+		coders/sync_utils.c
 
 OBJS = $(SRCS:.c=.o)
 
