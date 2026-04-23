@@ -6,7 +6,7 @@
 /*   By: khhammou <khhammou@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2026/04/15 18:13:31 by kali              #+#    #+#             */
-/*   Updated: 2026/04/20 12:31:35 by khhammou         ###   ########.fr       */
+/*   Updated: 2026/04/23 03:28:51 by khhammou         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -77,8 +77,14 @@ void	ft_usleep(long ms, t_sim *sim)
 		ts.tv_sec++;
 		ts.tv_nsec -= 1000000000;
 	}
+	pthread_mutex_lock(&sim->stop_lock);
+	if (sim->stop)
+	{
+		pthread_mutex_unlock(&sim->stop_lock);
+		return ;
+	}
+	pthread_mutex_unlock(&sim->stop_lock);
 	pthread_mutex_lock(&sim->sleep_mutex);
-	if (!sim->stop)
-		pthread_cond_timedwait(&sim->sleep_cond, &sim->sleep_mutex, &ts);
+	pthread_cond_timedwait(&sim->sleep_cond, &sim->sleep_mutex, &ts);
 	pthread_mutex_unlock(&sim->sleep_mutex);
 }

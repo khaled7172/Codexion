@@ -8,20 +8,6 @@ Codexion is a concurrency simulation inspired by the classic Dining Philosophers
 
 The simulation stops either when every coder has compiled at least a required number of times, or when a coder fails to start a new compile within the burnout deadline.
 
-Types of waiting:
-Blocking wait
-pthread_cond_wait(&cond, &mutex);
-it sleeps until someone signaled and releases mutex while sleeping and blocks thread and when woken in re-acquires mutex before returning
-woken up by pthread_cond_signal or broadcast
-
-pthread_cond_timedwait(time-limited wait)
-pthread_cond_timedwait(&cond, &mutex, &abstime);
-absolute time (abstime)
-it waits until signal or timeout
-for basially sleep for 1ms or wake early if sleep_cond is signaled
-or timeout expires
-its woken up by broadcast on the sleep cond
-
 ## Instructions
 
 ### Compilation
@@ -63,6 +49,14 @@ All arguments are mandatory. All time values are in milliseconds.
 
 # Burnout scenario
 ./codexion 2 300 400 100 100 5 0 fifo
+```
+
+### Helgrind usage
+
+A suppression file is provided to silence a known glibc false positive in `pthread_cond_timedwait` (glibc emits an internal signal during timedwait that helgrind misreads as a lock-order violation):
+
+```bash
+valgrind --tool=helgrind --suppressions=codexion.supp ./codexion 5 800 200 200 200 3 0 fifo
 ```
 
 ## Blocking cases handled
@@ -108,9 +102,13 @@ The `notified` flag prevents the lost-wakeup problem: if a signal arrives betwee
 
 Protects `sim->stop`, `sim->burned_out`, `compile_count`, and `last_compile_time`. Used by both the monitor (to set stop and read coder state) and coder threads (to update their own state after compiling). This single lock prevents data races on the fields the monitor inspects.
 
+**Lock ordering:** `stop_lock` → `log_lock`. This ordering is enforced globally — no code acquires `log_lock` while already holding `stop_lock` from a different lock domain, and `log_state` never nests them.
+
 ### Sleep condvar (`sleep_mutex` + `sleep_cond`)
 
 Used exclusively by `ft_usleep`. Instead of busy-waiting, threads sleep via `pthread_cond_timedwait` on `sleep_cond`. When `wake_all` is called, it broadcasts on `sleep_cond` under `sleep_mutex`, instantly waking all threads that are sleeping in `ft_usleep`, ensuring fast and clean shutdown.
+
+`ft_usleep` checks `sim->stop` under `stop_lock` before entering the `sleep_mutex`/`timedwait` section — this prevents a data race where `stop` was previously read under `sleep_mutex` (wrong lock).
 
 ### Race condition prevention example
 
@@ -128,6 +126,10 @@ count = sim->coders[i].compile_count;
 pthread_mutex_unlock(&sim->stop_lock);
 ```
 
+### Helgrind-clean `burned_out` access
+
+`sim->burned_out` is protected by `stop_lock`. `log_state` reads it under `stop_lock` before and after the initial fast-path check, but never while holding `log_lock` — preserving the global lock order and eliminating the helgrind data-race report on `burned_out`.
+
 ## Resources
 
 - POSIX Threads Programming — Blaise Barney, Lawrence Livermore: https://hpc-tutorials.llnl.gov/posix/
@@ -139,3 +141,123 @@ pthread_mutex_unlock(&sim->stop_lock);
 ### AI usage
 
 Claude (Anthropic) was used throughout this project for: code review and bug identification (data races, deadlock analysis, helgrind error interpretation), architectural decisions (per-coder condvar design, lock ordering strategy)
+
+## Special Cases
+## Helgrind False Positive with `pthread_cond_timedwait`
+
+### Overview
+
+During testing with Helgrind, the following warning may occasionally appear:
+
+```
+pthread_cond_{signal,broadcast}: associated lock is not held by any thread
+```
+
+This warning appears to indicate incorrect usage of condition variables. However, in this project, it is a **false positive** caused by limitations in Helgrind's analysis of glibc internals.
+
+---
+
+### Where it happens
+
+The issue originates from the custom sleep function:
+
+```c
+pthread_mutex_lock(&sim->sleep_mutex);
+pthread_cond_timedwait(&sim->sleep_cond, &sim->sleep_mutex, &ts);
+pthread_mutex_unlock(&sim->sleep_mutex);
+```
+
+And its interaction with:
+
+```c
+pthread_mutex_lock(&sim->sleep_mutex);
+pthread_cond_broadcast(&sim->sleep_cond);
+pthread_mutex_unlock(&sim->sleep_mutex);
+```
+
+Both usages follow correct POSIX requirements:
+
+* The mutex is locked before calling `pthread_cond_timedwait`
+* The same mutex is used for signaling (`broadcast`)
+* The mutex is held during signaling
+
+---
+
+### Why Helgrind reports an error
+
+Internally, `pthread_cond_timedwait` is not a simple sleep. It involves:
+
+1. Registering the thread in a wait queue
+2. Releasing the mutex atomically
+3. Sleeping via a futex (kernel primitive)
+4. Waking up due to either:
+
+   * a signal/broadcast
+   * a timeout
+5. Re-acquiring the mutex before returning
+
+When a timeout occurs, glibc performs internal cleanup to remove the thread from the condition variable queue.
+
+During this cleanup, glibc may perform operations that resemble a signal or wake-up **without holding the user-level mutex**. This is safe and intentional inside glibc, but Helgrind cannot see the internal synchronization mechanisms used.
+
+As a result, Helgrind incorrectly reports:
+
+> "signal/broadcast without holding the associated lock"
+
+Even though user code is correct.
+
+---
+
+### Why it is inconsistent
+
+The warning does not always appear. It depends on:
+
+* Thread scheduling timing
+* Whether the timeout path is taken
+* Internal execution paths within glibc
+
+This makes the issue look like a race condition, but it is not.
+
+---
+
+### Why replacing with `usleep` removes the warning
+
+Replacing the implementation with:
+
+```c
+usleep(ms * 1000);
+```
+
+removes the warning because:
+
+* `usleep` does not use condition variables
+* It directly calls a kernel sleep (`nanosleep`)
+* No mutexes or signaling are involved
+
+Therefore, Helgrind has nothing to analyze and produces no warning.
+
+---
+
+### Trade-offs
+
+Using `pthread_cond_timedwait`:
+
+* Allows early wake-up via `wake_all`
+* Avoids busy waiting
+* More responsive shutdown
+* May trigger Helgrind false positives
+
+Using `usleep`:
+
+* Simpler
+* No Helgrind warnings
+* Cannot wake early
+* Slightly worse responsiveness
+
+---
+
+### Conclusion
+
+The Helgrind warning related to `pthread_cond_timedwait` in this project is a **known false positive** caused by glibc's internal implementation of timed condition variable waits.
+
+The synchronization logic in this project is correct and follows POSIX standards. The warning can be safely ignored or suppressed.
